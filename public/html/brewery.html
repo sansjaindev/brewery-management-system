@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brewery Details</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a id="logout" href="/users/logout">Logout</a>
+        <a id="login" href="/users/login">Login</a>
+        <a id="signup" href="/users/signup">Signup</a>
+    </nav>
+    <div id="info"></div>
+    <h1 id="brewery-name"></h1>
+    <p id="brewery-address"></p>
+    <p id="brewery-phone"></p>
+    <p id="brewery-website"></p>
+
+    <h2>Reviews</h2>
+    <div id="reviews"></div>
+    <div id="reviewing">
+        <h3>Add a Review</h3>
+        <form id="review-form" method="POST">
+            <label for="rating">Rating:</label>
+            <input type="number" id="rating" name="rating" min="1" max="5" required>
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" required></textarea>
+            <button type="submit">Submit Review</button>
+        </form>
+    </div>
+
+    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const breweryId = window.location.pathname.split('/')[2];
+            document.getElementById('review-form').action = `/brewery/${breweryId}/review`;
+            try {
+
+                const response = await fetch(`https://api.openbrewerydb.org/breweries/${breweryId}`);
+                const brewery = await response.json();
+                if (response.ok) {
+                    document.getElementById('brewery-name').innerText = brewery.name;
+                    document.getElementById('brewery-address').innerText = `${brewery.street}, ${brewery.city}, ${brewery.state}`;
+                    document.getElementById('brewery-phone').innerText = `Phone: ${brewery.phone}`;
+                    document.getElementById('brewery-website').innerHTML = `Website: <a href="${brewery.website_url}">${brewery.website_url}</a>`;
+                } else {
+                    console.error("Failed to fetch brewery details");
+                }
+
+                const reviewsResponse = await fetch(`/api/brewery/${breweryId}/reviews`);
+                const reviews = await reviewsResponse.json();
+                const reviewsDiv = document.getElementById('reviews');
+                if (reviews.length > 0) {
+                    reviews.forEach(review => {
+                        const div = document.createElement('div');
+                        div.innerHTML = `
+                            <p>Rating: ${review.rating}</p>
+                            <p>${review.description}</p>
+                            <p>Reviewed by: ${review.user.email}</p>
+                        `;
+                        reviewsDiv.appendChild(div);
+                    });
+                } else {
+                    reviewsDiv.innerHTML = `<p>No reviews yet. Be the first to review!</p>`;
+                }
+
+            } catch (error) {
+                console.error("Error fetching brewery details:", error);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('/users/isLoggedIn')
+                .then(response => response.json())
+                .then(isLoggedIn => {
+                    const logoutLink = document.getElementById('logout');
+                    const loginLink = document.getElementById('login');
+                    const signupLink = document.getElementById('signup');
+                    const reviewFrom = document.getElementById('reviewing');
+
+                    if (isLoggedIn) {
+                        reviewFrom.style.display = 'inline';
+                        logoutLink.style.display = 'inline';
+                        loginLink.style.display = 'none';
+                        signupLink.style.display = 'none';
+                    } else {
+                        reviewFrom.style.display = 'none';
+                        logoutLink.style.display = 'none';
+                        loginLink.style.display = 'inline';
+                        signupLink.style.display = 'inline';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+
+</html>

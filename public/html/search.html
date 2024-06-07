@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a id="logout" href="/users/logout">Logout</a>
+        <a id="login" href="/users/login">Login</a>
+        <a id="signup" href="/users/signup">Signup</a>
+    </nav>
+    <h1>Search Results</h1>
+    <div id="results"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('/users/isLoggedIn')
+                .then(response => response.json())
+                .then(isLoggedIn => {
+                    const logoutLink = document.getElementById('logout');
+                    const loginLink = document.getElementById('login');
+                    const signupLink = document.getElementById('signup');
+
+                    if (isLoggedIn) {
+                        logoutLink.style.display = 'inline';
+                        loginLink.style.display = 'none';
+                        signupLink.style.display = 'none';
+                    } else {
+                        logoutLink.style.display = 'none';
+                        loginLink.style.display = 'inline';
+                        signupLink.style.display = 'inline';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const city = urlParams.get('city') || '';
+            const name = urlParams.get('name') || '';
+            const type = urlParams.get('type') || '';
+            const response = await fetch(`/api/search?city=${city}&name=${name}&type=${type}`);
+
+            const breweries = await response.json();
+            const resultsDiv = document.getElementById('results');
+            breweries.forEach(async brewery => {
+                const div = document.createElement('div');
+                const ratingResponse = await fetch(`/api/brewery/${brewery.id}/average-rating`);
+                const ratingData = await ratingResponse.json();
+                
+                div.innerHTML = `
+                    <h2><a href="/brewery/${brewery.id}">${brewery.name}</a></h2>
+                    <p>${brewery.street}, ${brewery.city}, ${brewery.state}</p>
+                    <p>Phone: ${brewery.phone}</p>
+                    <p>Website: <a href="${brewery.website_url}">${brewery.website_url}</a></p>
+                    <p>Rating: ${ratingData.average || 'No ratings yet'}</p>
+                `;
+                resultsDiv.appendChild(div);
+            });
+        });
+    </script>
+</body>
+</html>
