@@ -60,7 +60,7 @@ router.get('/brewery/:id', async (req, res) => {
 router.get('/api/brewery/:id/reviews', async (req, res) => {
     try {
         const { id } = req.params;
-        const reviews = await Review.find({ breweryId: id }).populate('user', 'email');
+        const reviews = await Review.find({ breweryId: id }).populate('user', 'fullname');
         res.json(reviews);
     } catch (error) {
         console.error("Error fetching reviews:", error);
